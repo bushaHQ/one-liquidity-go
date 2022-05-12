@@ -112,7 +112,7 @@ func TestClient_UpdateWebhook(t *testing.T) {
 		name           string
 		mockHttpClient MockHttpClient
 		args           args
-		want           WebhookResp
+		want           Resp
 		wantErr        bool
 	}{
 		{
@@ -139,7 +139,7 @@ func TestClient_UpdateWebhook(t *testing.T) {
 			args: args{
 				webhook: "https://webhook.site/d8e81cdd-0db9-4b10-82a0-54f8d6be247g",
 			},
-			want: WebhookResp{
+			want: Resp{
 				Message: "Ok",
 			},
 			wantErr: false,

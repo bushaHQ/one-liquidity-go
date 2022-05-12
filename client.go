@@ -173,7 +173,7 @@ func (cl *Client) patch(path string, params interface{}, response interface{}) (
 func (cl *Client) request(req *http.Request, response interface{}) (err error) {
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("authorization", cl.apiKey)
+	req.Header.Set("Authorization", cl.apiKey)
 
 	r, err := cl.httpClient.Do(req)
 
