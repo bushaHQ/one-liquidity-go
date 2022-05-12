@@ -2,6 +2,7 @@ package liquidity
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -83,16 +84,16 @@ func (cl *Client) Debit(cardId string, amount float64) (CardResp, error) {
 	return res, err
 }
 
-// GetDeposit gets 1Liquidity Union54 float deposit with the deposit ID
-func (cl *Client) GetDeposit(depositId string) (DepositResp, error) {
+// GetCardDeposit gets 1Liquidity Union54 float deposit with the deposit ID
+func (cl *Client) GetCardDeposit(depositId string) (DepositResp, error) {
 	var res DepositResp
 	err := cl.get(fmt.Sprintf("/card/v1/service/deposit?depositId=%s", depositId), nil, &res)
 	return res, err
 }
 
-//PostDeposit initiates a Union54 float deposit
-func (cl *Client) PostDeposit(amount int, currency string) (Resp, error) {
-	var res Resp
+//PostCardDeposit initiates a Union54 float deposit
+func (cl *Client) PostCardDeposit(amount int, currency string) (PostDepositResp, error) {
+	var res PostDepositResp
 	err := cl.post("/card/v1/service/deposit", d{amount, currency}, &res)
 	return res, err
 }
@@ -136,5 +137,50 @@ func (cl *Client) GetFailedTransactions(p Params) (TransactionsResp, error) {
 func (cl *Client) GetTransaction(cardId string, p Params) (TransactionsResp, error) {
 	var res TransactionsResp
 	err := cl.get(fmt.Sprintf("/card/v1/transactions?card=%s&startDate=%s&endDate=%s&limit=%d&lek=%s", cardId, p.StartDate.Format(time.RFC3339), p.EndDate.Format(time.RFC3339), p.Limit, p.Lek), nil, &res)
+	return res, err
+}
+
+// GetIntegratorDeposit allows an integrator retrieve a deposit
+func (cl *Client) GetIntegratorDeposit(depositId string) (DepositResp, error) {
+	var res DepositResp
+	err := cl.get(fmt.Sprintf("/integrator/v1/deposit?deposit=%s", depositId), nil, &res)
+	return res, err
+}
+
+// PostIntegratorDeposit allows an admin to update an integrator's deposit
+func (cl *Client) PostIntegratorDeposit(amount int, currency string) (PostDepositResp, error) {
+	var res PostDepositResp
+	err := cl.post("/integrator/v1/deposit", d{amount, currency}, &res)
+	return res, err
+}
+
+// GetIntegratorFloats retrieves an integrators list of float account balances for given array of currencies
+func (cl *Client) GetIntegratorFloats(currencies []string) (FloatsResp, error) {
+	var res FloatsResp
+	bd := strings.Builder{}
+	for idx, currency := range currencies {
+
+		if idx == len(currencies)-1 {
+			bd.WriteString("currencies=" + currency)
+			break
+		}
+
+		bd.WriteString("currencies=" + currency + "&")
+	}
+	err := cl.get(fmt.Sprintf("/integrator/v1/floats?%s", bd.String()), nil, &res)
+	return res, err
+}
+
+// GetIntegratorFloat retrieves an integrator's float account balance for a given currency
+func (cl *Client) GetIntegratorFloat(currency string) (FloatResp, error) {
+	var res FloatResp
+	err := cl.get(fmt.Sprintf("/integrator/v1/float?currency=%s", currency), nil, &res)
+	return res, err
+}
+
+// UpdateFloatDefault allows an integrator to update their default float
+func (cl *Client) UpdateFloatDefault(floatId string) (Resp, error) {
+	var res Resp
+	err := cl.patch("/integrator/v1/float/default", f{floatId}, &res)
 	return res, err
 }
