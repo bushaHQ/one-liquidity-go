@@ -5,10 +5,6 @@ func (e Error) Error() string {
 }
 
 type Error struct {
-	Message string
-}
-
-type T struct {
 	Message         string `json:"message"`
 	ValidationError []struct {
 		Code     string   `json:"code"`
