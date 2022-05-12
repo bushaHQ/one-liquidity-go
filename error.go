@@ -5,5 +5,12 @@ func (e Error) Error() string {
 }
 
 type Error struct {
-	Message string
+	Message         string `json:"message"`
+	ValidationError []struct {
+		Code     string   `json:"code"`
+		Expected string   `json:"expected,omitempty"`
+		Received string   `json:"received,omitempty"`
+		Path     []string `json:"path"`
+		Message  string   `json:"message"`
+	} `json:"validationError"`
 }
