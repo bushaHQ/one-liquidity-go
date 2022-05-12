@@ -131,7 +131,7 @@ func TestClient_UpdateWebhook(t *testing.T) {
 						`{"message":"Ok"}`)))
 
 					return &http.Response{
-						StatusCode: 201,
+						StatusCode: 200,
 						Body:       responseBody,
 					}, nil
 				},

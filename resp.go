@@ -8,3 +8,7 @@ type IntegratorResp struct {
 type D1 struct {
 	IntegratorId string `json:"integratorId"`
 }
+
+type WebhookResp struct {
+	Message string `json:"message"`
+}

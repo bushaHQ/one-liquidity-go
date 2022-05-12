@@ -25,10 +25,6 @@ func (cl *Client) RegisterIntegrator(data RegisterIntegratorData) (IntegratorRes
 	return res, err
 }
 
-type WebhookResp struct {
-	Message string `json:"message"`
-}
-
 // UpdateWebhook allows an integrator to update their webhook URL
 func (cl *Client) UpdateWebhook(webhook string) (WebhookResp, error) {
 	var res WebhookResp
