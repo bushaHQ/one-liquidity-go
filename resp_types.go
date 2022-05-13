@@ -154,3 +154,44 @@ type s struct {
 type w struct {
 	webhook string
 }
+
+type getUserResp struct {
+	Message string `json:"message"`
+	Data    gur    `json:"data"`
+}
+type gur struct {
+	UserID string `json:"userId"`
+	UID    string `json:"uid"`
+}
+
+type createUserResp struct {
+	Message string   `json:"message"`
+	Data    userResp `json:"data"`
+}
+type userResp struct {
+	UserID string `json:"userId"`
+}
+
+type getCardUserDocURLResp struct {
+	Message string     `json:"message"`
+	Data    docURLResp `json:"data"`
+}
+
+type updateUserAddressResp struct {
+	Message         string          `json:"message"`
+	ValidationError validationError `json:"validationError,omitempty"`
+}
+type validationError struct {
+	Code     string   `json:"code"`
+	Keys     []string `json:"keys"`
+	Expected string   `json:"expected"`
+	Received string   `json:"received"`
+	Path     []string `json:"path"`
+	Message  string   `json:"message"`
+}
+
+type docURLResp struct {
+	SelfieUploadURL string `json:"selfieUploadUrl"`
+	IDUploadURL     string `json:"idUploadUrl"`
+	UID             string `json:"uid"`
+}
