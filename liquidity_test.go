@@ -2,13 +2,14 @@ package liquidity
 
 import (
 	"bytes"
-	"github.com/joho/godotenv"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 var (
@@ -155,6 +156,266 @@ func TestClient_UpdateWebhook(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("UpdateWebhook() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestClient_CreateUser(t *testing.T) {
+	type args struct {
+		CreateUserData
+	}
+	tests := []struct {
+		name           string
+		mockHttpClient MockHttpClient
+		args           args
+		want           createUserResp
+		wantErr        bool
+	}{
+		{
+			name: "Create a card user",
+			mockHttpClient: MockHttpClient{
+
+				DoFunc: func(r *http.Request) (*http.Response, error) {
+					if r.URL.Path != "/card/v1/user" {
+						t.Errorf("Expected to request '/card/v1/user', got: %s", r.URL.Path)
+					}
+					if r.Header.Get("Content-Type") != "application/json" {
+						t.Errorf("Expected Accept: application/json header, got: %s", r.Header.Get("Accept"))
+					}
+
+					responseBody := ioutil.NopCloser(bytes.NewReader([]byte(
+						`{
+							"message": "Ok",
+							"data": {
+							  "userId": "69a9a77b-5d8d-5738-80eb-ff0b1fb3846a"
+							}
+						  }`)))
+
+					return &http.Response{
+						StatusCode: 200,
+						Body:       responseBody,
+					}, nil
+				},
+			},
+			args: args{
+				CreateUserData{
+					FirstName:  "kasumu",
+					LastName:   "sofiyullahi",
+					KycCountry: "nga",
+					UID:        "169c9ff3-4af1-4115-a7eb-363827022625",
+					Address:    "3 Misratah Street, Wuse 2",
+					City:       "fct",
+					PostalCode: "900888",
+				},
+			},
+			want: createUserResp{
+				Message: "Ok",
+				Data: userResp{
+					UserID: "69a9a77b-5d8d-5738-80eb-ff0b1fb3846a",
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cl.SetHTTPClient(&tt.mockHttpClient)
+			got, err := cl.CreateUser(tt.args.CreateUserData)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("CreateUser() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("CreateUser() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestClient_GetUser(t *testing.T) {
+	type args struct {
+		userID string
+	}
+	tests := []struct {
+		name           string
+		mockHttpClient MockHttpClient
+		args           args
+		want           getUserResp
+		wantErr        bool
+	}{
+		{
+			name: "Get a card user",
+			mockHttpClient: MockHttpClient{
+
+				DoFunc: func(r *http.Request) (*http.Response, error) {
+					if r.URL.Path != "/card/v1/user" {
+						t.Errorf("Expected to request '/card/v1/user', got: %s", r.URL.Path)
+					}
+					if r.Header.Get("Content-Type") != "application/json" {
+						t.Errorf("Expected Accept: application/json header, got: %s", r.Header.Get("Accept"))
+					}
+
+					responseBody := ioutil.NopCloser(bytes.NewReader([]byte(
+						`{
+							"message": "Ok",
+							"data": {
+							  "userId": "69a9a77b-5d8d-5738-80eb-ff0b1fb3846a",
+							  "uid": "169c9ff3-4af1-4115-a7eb-363827022625"
+							}
+						  }`)))
+
+					return &http.Response{
+						StatusCode: 200,
+						Body:       responseBody,
+					}, nil
+				},
+			},
+			args: args{
+				userID: "69a9a77b-5d8d-5738-80eb-ff0b1fb3846a",
+			},
+			want: getUserResp{
+				Message: "Ok",
+				Data: gur{
+					UserID: "69a9a77b-5d8d-5738-80eb-ff0b1fb3846a",
+					UID:    "169c9ff3-4af1-4115-a7eb-363827022625",
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// cl.SetHTTPClient(&tt.mockHttpClient)
+			got, err := cl.GetUser(tt.args.userID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetUser() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetUser() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestClient_UpdateUserAddress(t *testing.T) {
+	type args struct {
+		UpdateUserAddressData
+	}
+	tests := []struct {
+		name           string
+		mockHttpClient MockHttpClient
+		args           args
+		want           updateUserAddressResp
+		wantErr        bool
+	}{
+		{
+			name: "Allows integrators to update the address, city, postalCode and kycCountry of their user",
+			mockHttpClient: MockHttpClient{
+
+				DoFunc: func(r *http.Request) (*http.Response, error) {
+					if r.URL.Path != "/card/v1/user/address" {
+						t.Errorf("Expected to request '/card/v1/user/address', got: %s", r.URL.Path)
+					}
+					if r.Header.Get("Content-Type") != "application/json" {
+						t.Errorf("Expected Accept: application/json header, got: %s", r.Header.Get("Accept"))
+					}
+
+					responseBody := ioutil.NopCloser(bytes.NewReader([]byte(
+						`{
+							"message": "Ok"
+						  }`)))
+
+					return &http.Response{
+						StatusCode: 200,
+						Body:       responseBody,
+					}, nil
+				},
+			},
+			args: args{
+				UpdateUserAddressData: UpdateUserAddressData{
+					UserID:     "69a9a77b-5d8d-5738-80eb-ff0b1fb3846a",
+					KycCountry: "NGA",
+					Address:    "No 15 bentell gardens estate, lokogoma",
+					City:       "FCT",
+					PostalCode: "909888",
+				},
+			},
+			want: updateUserAddressResp{
+				Message: "Ok",
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// cl.SetHTTPClient(&tt.mockHttpClient)
+			got, err := cl.UpdateUserAddress(tt.args.UpdateUserAddressData)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("UpdateUserAddress() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("UpdateUserAddress() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestClient_GetCardUserDocURL(t *testing.T) {
+	type args struct {
+		userID string
+	}
+	tests := []struct {
+		name           string
+		mockHttpClient MockHttpClient
+		args           args
+		want           updateUserAddressResp
+		wantErr        bool
+	}{
+		{
+			name: "Get a card user document upload url",
+			mockHttpClient: MockHttpClient{
+
+				DoFunc: func(r *http.Request) (*http.Response, error) {
+					if r.URL.Path != "card/v1/user/document/url" {
+						t.Errorf("Expected to request 'card/v1/user/document/url', got: %s", r.URL.Path)
+					}
+					if r.Header.Get("Content-Type") != "application/json" {
+						t.Errorf("Expected Accept: application/json header, got: %s", r.Header.Get("Accept"))
+					}
+
+					responseBody := ioutil.NopCloser(bytes.NewReader([]byte(
+						`{
+							"message": "Ok"
+						  }`)))
+
+					return &http.Response{
+						StatusCode: 200,
+						Body:       responseBody,
+					}, nil
+				},
+			},
+			args: args{
+				userID: "69a9a77b-5d8d-5738-80eb-ff0b1fb3846a",
+			},
+			want: updateUserAddressResp{
+				Message: "Ok",
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cl.SetHTTPClient(&tt.mockHttpClient)
+			got, err := cl.GetCardUserDocURL(tt.args.userID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetCardUserDocURL() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetCardUserDocURL() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
