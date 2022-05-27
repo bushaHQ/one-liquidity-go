@@ -235,28 +235,7 @@ func TestClient_CreateUser(t *testing.T) {
 }
 
 func TestClient_GetUser(t *testing.T) {
-	respJSON := `
-	{
-		"message": "Ok",
-		"data": {
-		  "createdAt": "2022-05-26T14:47:07.089Z",
-		  "updatedAt": "2022-05-26T14:47:09.744Z",
-		  "firstName": "Chijioke",
-		  "lastName": "Amanambu",
-		  "uid": "b@gmail.com",
-		  "kycCountry": "NGA",
-		  "address": "3 Misratah Street, Wuse 2",
-		  "city": "FCT",
-		  "postalCode": "900888",
-		  "physicalCardCount": 0,
-		  "virtualCardCount": 0,
-		  "selfieUploaded": true,
-		  "idUploaded": true,
-		  "ofacChecked": true,
-		  "ofacFail": false,
-		  "active": true
-		}
-	  }
+	respJSON := `{"message":"Ok","data":{"createdAt":"2022-05-26T14:47:07.089Z","updatedAt":"2022-05-27T10:03:43.208Z","firstName":"Chijioke","lastName":"Amanambu","uid":"b@gmail.com","kycCountry":"NGA","address":"No 56 bentell gardens estate, lokogoma","city":"KJHGVB","postalCode":"90988VB8","physicalCardCount":0,"virtualCardCount":4,"selfieUploaded":true,"idUploaded":true,"ofacChecked":true,"ofacFail":false,"active":true}}
 	`
 	var resp getUserResp
 	_ = json.Unmarshal([]byte(respJSON), &resp)
@@ -283,31 +262,7 @@ func TestClient_GetUser(t *testing.T) {
 					}
 
 					responseBody := ioutil.NopCloser(bytes.NewReader([]byte(
-						`
-						{
-							"message": "Ok",
-							"data": {
-							  "createdAt": "2022-05-26T14:47:07.089Z",
-							  "updatedAt": "2022-05-26T14:47:09.744Z",
-							  "firstName": "Chijioke",
-							  "lastName": "Amanambu",
-							  "uid": "b@gmail.com",
-							  "kycCountry": "NGA",
-							  "address": "3 Misratah Street, Wuse 2",
-							  "city": "FCT",
-							  "postalCode": "900888",
-							  "physicalCardCount": 0,
-							  "virtualCardCount": 0,
-							  "selfieUploaded": true,
-							  "idUploaded": true,
-							  "ofacChecked": true,
-							  "ofacFail": false,
-							  "active": true
-							}
-						  }
-						  }`,
-					)))
-
+						respJSON)))
 					return &http.Response{
 						StatusCode: 200,
 						Body:       responseBody,
@@ -370,14 +325,7 @@ func TestClient_UpdateUserAddress(t *testing.T) {
 					}
 
 					responseBody := ioutil.NopCloser(bytes.NewReader([]byte(
-						`{
-							"message": "Ok",
-							"data": {
-							  "message": "Ok"
-							}
-						  }`,
-					)))
-
+						respJSON)))
 					return &http.Response{
 						StatusCode: 200,
 						Body:       responseBody,
@@ -387,10 +335,10 @@ func TestClient_UpdateUserAddress(t *testing.T) {
 			args: args{
 				UpdateUserAddressData: UpdateUserAddressData{
 					UserID:     "d01a03bd-4c83-5b08-b458-1b4a2be535bf",
-					KycCountry: "NGA",
-					Address:    "No 56 bentell gardens estate, lokogoma",
-					City:       "KJHGVB",
-					PostalCode: "90988VB8",
+					KycCountry: "USA",
+					Address:    "No 58 bentell gardens estate, lokogomb",
+					City:       "KJHGVBb",
+					PostalCode: "90988VAA",
 				},
 			},
 			want:    resp,
@@ -448,17 +396,7 @@ func TestClient_GetCardUserDocURL(t *testing.T) {
 					}
 
 					responseBody := ioutil.NopCloser(bytes.NewReader([]byte(
-						`{
-							"message": "Ok",
-							"data": {
-							  "selfieUploadUrl": "https://u54-ci-api-sandbox-kyc-selfie-store.s3.eu-central-1.amazonaws.com/9a2d3488-363b-4fa3-be36-e483a09a8fbf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIA4DZ3BAEQU42QCVPW%2F20220526%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20220526T165215Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEMH%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaDGV1LWNlbnRyYWwtMSJHMEUCIQDMiT0YAZmMF7m9juhqv4AOn%2BRRELhjJwMcEKNlmYNZQAIgHEXnznXPiwQJiCM%2BlG95kmFdS2GLBwPoayE%2FTZluntYqvwIIqv%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARABGgw4MzI4MTA1ODIzMDUiDB%2Bnw2zUoCSbvsT%2FySqTAlkW2qmk9R9uWIykn6BZjiYWotTlwBEdqzW%2FP%2F624gng2L3VnJMxX3qjaSmEV%2FYcUul0FLoQjqa%2B6%2BL%2FhjFXcjnwmBDqd%2F164R25bdWlIU%2Bzq6i6kogkPQ5%2BAo%2Bmt6rJ%2F8BJ7M%2FN%2BfW0I69xcqNHpagvHbwnvHXUUJQ5NuKA2Q5ss6eLL09hNTM6VRkHZTNxrUExtjzsp9O%2F6YAHpg%2BxXAiyn5D85NP8HIyHIEksoGNyqFAp%2BWBEcmA9Oevyjrax90%2FFfwQm8qLjM8nFE744%2F%2BA%2FLCf0E0TBsBO%2FKzqvRccZh%2B67VL31xnmUGusqkAe%2FsVfmvfmmP0Q8jD5fo3TXejY2aSiWxYKjRzzZ0XGS%2FHVsfuN3MLTgvpQGOpoBv7L8tT4kmofM9BwGtv%2BuTKoCrZUXwBn%2F0PSgz8bcXEbKVTCKu0U9ncno5F9C55ge2U6ukHQXvtdxhhkX%2BGxcG1llPvaYyo4C6qCj535LxhwfwxiifcvSu0ilihAmoY46DZhIs6RGWyt%2FdPuakzbA3PgEb%2BwGo8mR3GN77kACpJxQUjef7CrQeyjOVwBkQO5qobzyRbzTQw8dJQ%3D%3D&X-Amz-Signature=9c8b28d1d32189b4406ddeedd39f948e6dcf50478a74fa66998d53bd7ece2e65&X-Amz-SignedHeaders=host",
-							  "idUploadUrl": "https://u54-ci-api-sandbox-kyc-id-store.s3.eu-central-1.amazonaws.com/9a2d3488-363b-4fa3-be36-e483a09a8fbf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIA4DZ3BAEQU42QCVPW%2F20220526%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20220526T165215Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEMH%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaDGV1LWNlbnRyYWwtMSJHMEUCIQDMiT0YAZmMF7m9juhqv4AOn%2BRRELhjJwMcEKNlmYNZQAIgHEXnznXPiwQJiCM%2BlG95kmFdS2GLBwPoayE%2FTZluntYqvwIIqv%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARABGgw4MzI4MTA1ODIzMDUiDB%2Bnw2zUoCSbvsT%2FySqTAlkW2qmk9R9uWIykn6BZjiYWotTlwBEdqzW%2FP%2F624gng2L3VnJMxX3qjaSmEV%2FYcUul0FLoQjqa%2B6%2BL%2FhjFXcjnwmBDqd%2F164R25bdWlIU%2Bzq6i6kogkPQ5%2BAo%2Bmt6rJ%2F8BJ7M%2FN%2BfW0I69xcqNHpagvHbwnvHXUUJQ5NuKA2Q5ss6eLL09hNTM6VRkHZTNxrUExtjzsp9O%2F6YAHpg%2BxXAiyn5D85NP8HIyHIEksoGNyqFAp%2BWBEcmA9Oevyjrax90%2FFfwQm8qLjM8nFE744%2F%2BA%2FLCf0E0TBsBO%2FKzqvRccZh%2B67VL31xnmUGusqkAe%2FsVfmvfmmP0Q8jD5fo3TXejY2aSiWxYKjRzzZ0XGS%2FHVsfuN3MLTgvpQGOpoBv7L8tT4kmofM9BwGtv%2BuTKoCrZUXwBn%2F0PSgz8bcXEbKVTCKu0U9ncno5F9C55ge2U6ukHQXvtdxhhkX%2BGxcG1llPvaYyo4C6qCj535LxhwfwxiifcvSu0ilihAmoY46DZhIs6RGWyt%2FdPuakzbA3PgEb%2BwGo8mR3GN77kACpJxQUjef7CrQeyjOVwBkQO5qobzyRbzTQw8dJQ%3D%3D&X-Amz-Signature=2cf1ed1568c866071f9377950730fc9a984a14847446685a1f290b1a0f28fd54&X-Amz-SignedHeaders=host",
-							  "uid": "b@gmail.com"
-							}
-							  }
-						  `,
-					)))
-
+						respJSON)))
 					return &http.Response{
 						StatusCode: 200,
 						Body:       responseBody,
