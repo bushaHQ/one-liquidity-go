@@ -3,7 +3,6 @@ package liquidity
 import (
 	"fmt"
 	"strings"
-	"time"
 )
 
 type RegisterIntegratorData struct {
@@ -21,16 +20,16 @@ type RegisterIntegratorData struct {
 }
 
 type CreateCardData struct {
-	UserId    string    `json:"userId"`
-	Expiry    time.Time `json:"expiry"`
-	SingleUse bool      `json:"singleUse"`
+	UserId    string `json:"userId"`
+	Expiry    string `json:"expiry"`
+	SingleUse bool   `json:"singleUse"`
 }
 
 type Params struct {
 	Id        string
 	Type      string
-	StartDate time.Time
-	EndDate   time.Time
+	StartDate string
+	EndDate   string
 	Limit     int
 	Lek       string
 }
@@ -52,7 +51,7 @@ func (cl *Client) UpdateWebhook(webhook string) (Resp, error) {
 //CreateCard allows an integrator to create a virtual card for their user
 func (cl *Client) CreateCard(data CreateCardData) (CardResp, error) {
 	var res CardResp
-	err := cl.post("/integrator/v1/card", data, &res)
+	err := cl.post("/card/v1", data, &res)
 	return res, err
 }
 
@@ -66,7 +65,7 @@ func (cl *Client) GetCard(card string, trackingNumber string) (CardResp, error) 
 // GetCards allows an integrator to get all cards for their user
 func (cl *Client) GetCards(p Params) (CardsResp, error) {
 	var res CardsResp
-	err := cl.get(fmt.Sprintf("/cards/v1?user=%s&type=%s&startDate=%s&endDate=%s&limit=%d&lek=%s", p.Id, p.Type, p.StartDate.Format(time.RFC3339), p.EndDate.Format(time.RFC3339), p.Limit, p.Lek), nil, &res)
+	err := cl.get(fmt.Sprintf("/cards/v1?user=%s&type=%s&startDate=%s&endDate=%s&limit=%d&lek=%s", p.Id, p.Type, p.StartDate, p.EndDate, p.Limit, p.Lek), nil, &res)
 	return res, err
 }
 
@@ -129,14 +128,14 @@ func (cl *Client) GetFailedTransaction(txnId string) (TransactionResp, error) {
 // GetFailedTransactions returns the details of all failed transactions
 func (cl *Client) GetFailedTransactions(p Params) (TransactionsResp, error) {
 	var res TransactionsResp
-	err := cl.get(fmt.Sprintf("/card/v1/transactions/failed?card=%s&startDate=%s&endDate=%s&limit=%d&lek=%s", p.Id, p.StartDate.Format(time.RFC3339), p.EndDate.Format(time.RFC3339), p.Limit, p.Lek), nil, &res)
+	err := cl.get(fmt.Sprintf("/card/v1/transactions/failed?card=%s&startDate=%s&endDate=%s&limit=%d&lek=%s", p.Id, p.StartDate, p.EndDate, p.Limit, p.Lek), nil, &res)
 	return res, err
 }
 
 // GetTransaction allows integrators to get a list of all transactions for a given card
 func (cl *Client) GetTransaction(cardId string, p Params) (TransactionsResp, error) {
 	var res TransactionsResp
-	err := cl.get(fmt.Sprintf("/card/v1/transactions?card=%s&startDate=%s&endDate=%s&limit=%d&lek=%s", cardId, p.StartDate.Format(time.RFC3339), p.EndDate.Format(time.RFC3339), p.Limit, p.Lek), nil, &res)
+	err := cl.get(fmt.Sprintf("/card/v1/transactions?card=%s&startDate=%s&endDate=%s&limit=%d&lek=%s", cardId, p.StartDate, p.EndDate, p.Limit, p.Lek), nil, &res)
 	return res, err
 }
 
