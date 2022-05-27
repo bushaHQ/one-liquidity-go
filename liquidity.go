@@ -6,6 +6,13 @@ import (
 	"time"
 )
 
+// url paths to the various endpoints
+const (
+	userEndpoint   = "/card/v1/user"
+	getUserAddress = userEndpoint + "/address"
+	getUserDoc     = userEndpoint + "/documentation/urls"
+)
+
 type RegisterIntegratorData struct {
 	FloatCurrencies    []string `json:"floatCurrencies"`
 	FirstName          string   `json:"firstName"`
@@ -206,27 +213,27 @@ func (cl *Client) UpdateFloatDefault(floatId string) (Resp, error) {
 // GetUser Users allows an integrator to create a user
 func (cl *Client) GetUser(userID string) (getUserResp, error) {
 	var res getUserResp
-	err := cl.get(fmt.Sprintf("/card/v1/user?userId=%s", userID), nil, &res)
+	err := cl.get(fmt.Sprintf("%s?userId=%s", userEndpoint, userID), nil, &res)
 	return res, err
 }
 
 // CreateUser Users allows an integrator to create a user
 func (cl *Client) CreateUser(userData CreateUserData) (createUserResp, error) {
 	var res createUserResp
-	err := cl.post("/card/v1/user", userData, &res)
+	err := cl.post(userEndpoint,userData, &res)
 	return res, err
 }
 
 // UpdateUserAdress allows an integrator to update address, postal code and KYC country
 func (cl *Client) UpdateUserAddress(updateData UpdateUserAddressData) (updateUserAddressResp, error) {
 	var res updateUserAddressResp
-	err := cl.patch("/card/v1/user/address", updateData, &res)
+	err := cl.patch(getUserAddress,updateData, &res)
 	return res, err
 }
 
 // GetCardUserDocURL allows an integrator to update address, postal code and KYC country
 func (cl *Client) GetCardUserDocURL(userID string) (getCardUserDocURLResp, error) {
 	var res getCardUserDocURLResp
-	err := cl.get(fmt.Sprintf("/card/v1/user/document/url?userId=%s", userID), nil, &res)
+	err := cl.get(fmt.Sprintf("%s?user=%s", getUserDoc,userID), nil, &res)
 	return res, err
 }

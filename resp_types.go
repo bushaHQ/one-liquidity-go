@@ -159,9 +159,24 @@ type getUserResp struct {
 	Message string `json:"message"`
 	Data    gur    `json:"data"`
 }
+
 type gur struct {
-	UserID string `json:"userId"`
-	UID    string `json:"uid"`
+	CreatedAt         time.Time `json:"createdAt,string"`
+	UpdatedAt         time.Time `json:"updatedAt,string"`
+	FirstName         string    `json:"firstName"`
+	LastName          string    `json:"lastName"`
+	UID               string    `json:"uid"`
+	KycCountry        string    `json:"kycCountry"`
+	Address           string    `json:"address"`
+	City              string    `json:"city"`
+	PostalCode        string    `json:"postalCode"`
+	PhysicalCardCount int       `json:"physicalCardCount"`
+	VirtualCardCount  int       `json:"virtualCardCount"`
+	SelfieUploaded    bool      `json:"selfieUploaded"`
+	IDUploaded        bool      `json:"idUploaded"`
+	OfacChecked       bool      `json:"ofacChecked"`
+	OfacFail          bool      `json:"ofacFail"`
+	Active            bool      `json:"active"`
 }
 
 type createUserResp struct {
@@ -178,8 +193,10 @@ type getCardUserDocURLResp struct {
 }
 
 type updateUserAddressResp struct {
-	Message         string          `json:"message"`
-	ValidationError validationError `json:"validationError,omitempty"`
+	Message string `json:"message"`
+	Data    struct {
+		Message string `json:"message"`
+	} `json:"data"`
 }
 type validationError struct {
 	Code     string   `json:"code"`
