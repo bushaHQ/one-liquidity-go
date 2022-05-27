@@ -176,8 +176,8 @@ func TestClient_CreateCard(t *testing.T) {
 			mockHttpClient: MockHttpClient{
 
 				DoFunc: func(r *http.Request) (*http.Response, error) {
-					if r.URL.Path != "/integrator/v1/card" {
-						t.Errorf("Expected to request '/integrator/v1/card', got: %s", r.URL.Path)
+					if r.URL.Path != "/card/v1" {
+						t.Errorf("Expected to request '/card/v1', got: %s", r.URL.Path)
 					}
 					if r.Header.Get("Content-Type") != "application/json" {
 						t.Errorf("Expected Accept: application/json header, got: %s", r.Header.Get("Accept"))
@@ -235,7 +235,7 @@ func TestClient_CreateCard(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			//cl.SetHTTPClient(&tt.mockHttpClient)
+			cl.SetHTTPClient(&tt.mockHttpClient)
 			got, err := cl.CreateCard(tt.args.data)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CreateCard() error = %v, wantErr %v", err, tt.wantErr)
