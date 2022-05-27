@@ -1,16 +1,13 @@
 package liquidity
 
+import "encoding/json"
+
 func (e Error) Error() string {
-	return e.Message
+	marshal, _ := json.Marshal(e.ValidationError)
+	return e.Message + ": " + string(marshal)
 }
 
 type Error struct {
-	Message         string `json:"message"`
-	ValidationError []struct {
-		Code     string   `json:"code"`
-		Expected string   `json:"expected,omitempty"`
-		Received string   `json:"received,omitempty"`
-		Path     []string `json:"path"`
-		Message  string   `json:"message"`
-	} `json:"validationError"`
+	Message         string      `json:"message"`
+	ValidationError interface{} `json:"validationError"`
 }
