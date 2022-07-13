@@ -146,7 +146,7 @@ type f struct {
 
 type s struct {
 	CardId   string `json:"cardId"`
-	ReasonId int    `json:"reasonId"`
+	ReasonId int    `json:"reasonId,omitempty"`
 }
 
 type w struct {

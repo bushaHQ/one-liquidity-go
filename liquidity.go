@@ -83,31 +83,17 @@ func (cl *Client) Debit(cardId string, amount float64) (CardResp, error) {
 	return res, err
 }
 
-// GetCardDeposit gets 1Liquidity Union54 float deposit with the deposit ID
-func (cl *Client) GetCardDeposit(depositId string) (DepositResp, error) {
-	var res DepositResp
-	err := cl.get(fmt.Sprintf("/card/v1/service/deposit?depositId=%s", depositId), nil, &res)
-	return res, err
-}
-
-//PostCardDeposit initiates a Union54 float deposit
-func (cl *Client) PostCardDeposit(amount int, currency string) (PostDepositResp, error) {
-	var res PostDepositResp
-	err := cl.post("/card/v1/service/deposit", d{amount, currency}, &res)
-	return res, err
-}
-
 // Freeze allows an integrator or admin to freeze any type of card
 func (cl *Client) Freeze(cardId string) (Resp, error) {
 	var res Resp
-	err := cl.patch("/card/v1/freeze", f{cardId}, &res)
+	err := cl.patch("/card/v1/freeze", s{CardId: cardId}, &res)
 	return res, err
 }
 
 // Unfreeze allows an integrator or admin to unfreeze any type of card
 func (cl *Client) Unfreeze(cardId string) (Resp, error) {
 	var res Resp
-	err := cl.patch("/card/v1/unfreeze", f{cardId}, &res)
+	err := cl.patch("/card/v1/unfreeze", s{CardId: cardId}, &res)
 	return res, err
 }
 
@@ -174,12 +160,5 @@ func (cl *Client) GetIntegratorFloats(currencies []string) (FloatsResp, error) {
 func (cl *Client) GetIntegratorFloat(currency string) (FloatResp, error) {
 	var res FloatResp
 	err := cl.get(fmt.Sprintf("/integrator/v1/float?currency=%s", currency), nil, &res)
-	return res, err
-}
-
-// UpdateFloatDefault allows an integrator to update their default float
-func (cl *Client) UpdateFloatDefault(floatId string) (Resp, error) {
-	var res Resp
-	err := cl.patch("/integrator/v1/float/default", f{floatId}, &res)
 	return res, err
 }

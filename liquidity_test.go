@@ -2,13 +2,15 @@ package liquidity
 
 import (
 	"bytes"
-	"github.com/joho/godotenv"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 var (
@@ -557,7 +559,7 @@ func TestClient_Debit(t *testing.T) {
 func TestClient_Freeze(t *testing.T) {
 
 	type args struct {
-		cardId string
+		CardID string `json:"cardId"`
 	}
 	tests := []struct {
 		name           string
@@ -588,7 +590,7 @@ func TestClient_Freeze(t *testing.T) {
 				},
 			},
 			args: args{
-				cardId: "",
+				CardID: "aa174033-fe13-4c3a-90b3-f3485a0e9c86",
 			},
 			want: Resp{
 				Message: "Ok",
@@ -599,8 +601,9 @@ func TestClient_Freeze(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			//cl.SetHTTPClient(&tt.mockHttpClient)
-			got, err := cl.Freeze(tt.args.cardId)
+			got, err := cl.Freeze(tt.args.CardID)
 			if (err != nil) != tt.wantErr {
+				log.Println(err)
 				t.Errorf("Freeze() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
@@ -611,25 +614,25 @@ func TestClient_Freeze(t *testing.T) {
 	}
 }
 
-func TestClient_GetCardDeposit(t *testing.T) {
+func TestClient_Unfreeze(t *testing.T) {
 
 	type args struct {
-		depositId string
+		cardId string
 	}
 	tests := []struct {
 		name           string
 		mockHttpClient MockHttpClient
 		args           args
-		want           DepositResp
+		want           Resp
 		wantErr        bool
 	}{
 		{
-			name: "can get 1Liquidity Union54 float deposit with the deposit ID",
+			name: "Allow an integrator or admin to unfreeze any type of card",
 			mockHttpClient: MockHttpClient{
 
 				DoFunc: func(r *http.Request) (*http.Response, error) {
-					if r.URL.Path != "/card/v1/service/deposit" {
-						t.Errorf("Expected to request '/card/v1/service/deposit', got: %s", r.URL.Path)
+					if r.URL.Path != "/card/v1/unfreeze" {
+						t.Errorf("Expected to request '/card/v1/unfreeze', got: %s", r.URL.Path)
 					}
 					if r.Header.Get("Content-Type") != "application/json" {
 						t.Errorf("Expected Accept: application/json header, got: %s", r.Header.Get("Accept"))
@@ -645,17 +648,70 @@ func TestClient_GetCardDeposit(t *testing.T) {
 				},
 			},
 			args: args{
-				depositId: "",
+				cardId: "aa174033-fe13-4c3a-90b3-f3485a0e9c86",
 			},
-			want: DepositResp{
-				Message: "",
-				Data: D3{
-					DepositId:    "",
-					U54DepositId: "",
-					Amount:       0,
-					Currency:     "",
-					Status:       "",
+			want: Resp{
+				Message: "Ok",
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// cl.SetHTTPClient(&tt.mockHttpClient)
+			got, err := cl.Unfreeze(tt.args.cardId)
+			if (err != nil) != tt.wantErr {
+				log.Println(err)
+				t.Errorf("Unfreeze() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Unfreeze() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestClient_StopCard(t *testing.T) {
+
+	type args struct {
+		cardId   string
+		reasonId int
+	}
+	tests := []struct {
+		name           string
+		mockHttpClient MockHttpClient
+		args           args
+		want           Resp
+		wantErr        bool
+	}{
+		{
+			name: "Allows a card to be stopped",
+			mockHttpClient: MockHttpClient{
+
+				DoFunc: func(r *http.Request) (*http.Response, error) {
+					if r.URL.Path != "/card/v1/stop" {
+						t.Errorf("Expected to request '/card/v1/stop', got: %s", r.URL.Path)
+					}
+					if r.Header.Get("Content-Type") != "application/json" {
+						t.Errorf("Expected Accept: application/json header, got: %s", r.Header.Get("Accept"))
+					}
+
+					responseBody := ioutil.NopCloser(bytes.NewReader([]byte(
+						`{"message":"Ok"}`)))
+
+					return &http.Response{
+						StatusCode: 200,
+						Body:       responseBody,
+					}, nil
 				},
+			},
+			args: args{
+				cardId:   "",
+				reasonId: 0,
+			},
+			want: Resp{
+				Message: "Ok",
 			},
 			wantErr: false,
 		},
@@ -663,13 +719,13 @@ func TestClient_GetCardDeposit(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cl.SetHTTPClient(&tt.mockHttpClient)
-			got, err := cl.GetCardDeposit(tt.args.depositId)
+			got, err := cl.StopCard(tt.args.cardId, tt.args.reasonId)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetCardDeposit() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("StopCard() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetCardDeposit() got = %v, want %v", got, tt.want)
+				t.Errorf("StopCard() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -762,7 +818,7 @@ func TestClient_GetFailedTransactions(t *testing.T) {
 		wantErr        bool
 	}{
 		{
-			name: "allows an integrator to update their webhook url",
+			name: "Allows integrators to get a list of all failed transactions for a given card",
 			mockHttpClient: MockHttpClient{
 
 				DoFunc: func(r *http.Request) (*http.Response, error) {
@@ -774,7 +830,10 @@ func TestClient_GetFailedTransactions(t *testing.T) {
 					}
 
 					responseBody := ioutil.NopCloser(bytes.NewReader([]byte(
-						`{"message":"Ok"}`)))
+						`{
+							"message": "Ok",
+							"data": []
+						  }`)))
 
 					return &http.Response{
 						StatusCode: 200,
@@ -784,24 +843,24 @@ func TestClient_GetFailedTransactions(t *testing.T) {
 			},
 			args: args{
 				p: Params{
-					Id:        "",
+					Id:        "aa174033-fe13-4c3a-90b3-f3485a0e9c86",
 					Type:      "",
 					StartDate: "",
 					EndDate:   "",
-					Limit:     0,
+					Limit:     20,
 					Lek:       "",
 				},
 			},
 			want: TransactionsResp{
-				Message: "",
-				Data:    nil,
+				Message: "Ok",
+				Data:    []D4{},
 			},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cl.SetHTTPClient(&tt.mockHttpClient)
+			// cl.SetHTTPClient(&tt.mockHttpClient)
 			got, err := cl.GetFailedTransactions(tt.args.p)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetFailedTransactions() error = %v, wantErr %v", err, tt.wantErr)
@@ -1014,19 +1073,40 @@ func TestClient_GetTransaction(t *testing.T) {
 		wantErr        bool
 	}{
 		{
-			name: "allows an integrator to update their webhook url",
+			name: "Allows integrators to get a list of all transactions for a given card",
 			mockHttpClient: MockHttpClient{
 
 				DoFunc: func(r *http.Request) (*http.Response, error) {
-					if r.URL.Path != "/card/v1/transaction/failed" {
-						t.Errorf("Expected to request '/card/v1/transaction/failed', got: %s", r.URL.Path)
+					if r.URL.Path != "/card/v1/transactions" {
+						t.Errorf("Expected to request '/card/v1/transactions', got: %s", r.URL.Path)
 					}
 					if r.Header.Get("Content-Type") != "application/json" {
 						t.Errorf("Expected Accept: application/json header, got: %s", r.Header.Get("Accept"))
 					}
 
 					responseBody := ioutil.NopCloser(bytes.NewReader([]byte(
-						`{"message":"Ok"}`)))
+						`{
+							"message": "Ok",
+							"data": [
+							  {
+								"transactionId": "55ac5531-ca87-4ed4-bce0-e70b44a44b02",
+								"createdAt": "2022-06-02T14:02:37.313Z",
+								"debitId": "aa174033-fe13-4c3a-90b3-f3485a0e9c86",
+								"debitCurrency": "USD",
+								"conversionRate": 1,
+								"type": "debit",
+								"amount": 250
+							  },
+							  {
+								"transactionId": "e891d291-f76b-4e51-affa-8bd9c3e1d1b5",
+								"createdAt": "2022-06-02T11:18:18.788Z",
+								"conversionRate": 1,
+								"creditCurrency": "USD",
+								"type": "credit",
+								"amount": 1000
+							  }
+							]
+						  }`)))
 
 					return &http.Response{
 						StatusCode: 200,
@@ -1035,19 +1115,35 @@ func TestClient_GetTransaction(t *testing.T) {
 				},
 			},
 			args: args{
-				cardId: "",
+				cardId: "aa174033-fe13-4c3a-90b3-f3485a0e9c86",
 				p: Params{
-					Id:        "",
-					Type:      "",
 					StartDate: "",
 					EndDate:   "",
-					Limit:     0,
+					Limit:     20,
 					Lek:       "",
 				},
 			},
 			want: TransactionsResp{
-				Message: "",
-				Data:    nil,
+				Message: "Ok",
+				Data: []D4{
+					{
+						TransactionId:  "55ac5531-ca87-4ed4-bce0-e70b44a44b02",
+						CreatedAt:      "2022-06-02T14:02:37.313Z",
+						DebitId:        "aa174033-fe13-4c3a-90b3-f3485a0e9c86",
+						DebitCurrency:  "USD",
+						ConversionRate: 1,
+						Type:           "debit",
+						Amount:         250,
+					},
+					{
+						TransactionId:  "e891d291-f76b-4e51-affa-8bd9c3e1d1b5",
+						CreatedAt:      "2022-06-02T11:18:18.788Z",
+						ConversionRate: 1,
+						CreditCurrency: "USD",
+						Type:           "credit",
+						Amount:         1000,
+					},
+				},
 			},
 			wantErr: false,
 		},
@@ -1062,78 +1158,6 @@ func TestClient_GetTransaction(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("GetTransaction() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestClient_PostCardDeposit(t *testing.T) {
-
-	type args struct {
-		amount   int
-		currency string
-	}
-	tests := []struct {
-		name           string
-		mockHttpClient MockHttpClient
-		args           args
-		want           PostDepositResp
-		wantErr        bool
-	}{
-		{
-			name: "allows an integrator to update their webhook url",
-			mockHttpClient: MockHttpClient{
-
-				DoFunc: func(r *http.Request) (*http.Response, error) {
-					if r.URL.Path != "/card/v1/service/deposit" {
-						t.Errorf("Expected to request '/card/v1/service/deposit', got: %s", r.URL.Path)
-					}
-					if r.Header.Get("Content-Type") != "application/json" {
-						t.Errorf("Expected Accept: application/json header, got: %s", r.Header.Get("Accept"))
-					}
-
-					responseBody := ioutil.NopCloser(bytes.NewReader([]byte(
-						`{"message":"Ok"}`)))
-
-					return &http.Response{
-						StatusCode: 200,
-						Body:       responseBody,
-					}, nil
-				},
-			},
-			args: args{
-				amount:   0,
-				currency: "",
-			},
-			want: PostDepositResp{
-				Message: "",
-				Data: D5{
-					U54DepositId: "",
-					DepositId:    "",
-					Amount:       0,
-					Currency:     "",
-					CreatedAt:    "",
-					Usd:          Usd{},
-					Btc:          Coin{},
-					Eth:          Coin{},
-					Busd:         Coin{},
-					Usdc:         Coin{},
-					Usdt:         Coin{},
-				},
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cl.SetHTTPClient(&tt.mockHttpClient)
-			got, err := cl.PostCardDeposit(tt.args.amount, tt.args.currency)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("PostCardDeposit() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("PostCardDeposit() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -1165,7 +1189,26 @@ func TestClient_PostIntegratorDeposit(t *testing.T) {
 					}
 
 					responseBody := ioutil.NopCloser(bytes.NewReader([]byte(
-						`{"message":"Ok"}`)))
+						`
+						{
+							"message": "Ok",
+							"data": {
+							  "depositId": "265bee19-f533-4f6c-8076-4189950efeb2",
+							  "amount": 1000,
+							  "currency": "USD",
+							  "createdAt": "2022-06-01T13:04:46.362Z",
+							  "usd": {
+								"accountNumber": "Nan",
+								"accountName": "Nan",
+								"bankName": "Nan",
+								"bankAddress": "Nan",
+								"branchCode": "Nan",
+								"swiftCode": "Nan"
+							  }
+							}
+						}
+						`,
+					)))
 
 					return &http.Response{
 						StatusCode: 200,
@@ -1178,7 +1221,7 @@ func TestClient_PostIntegratorDeposit(t *testing.T) {
 				currency: "",
 			},
 			want: PostDepositResp{
-				Message: "",
+				Message: "Ok",
 				Data: D5{
 					U54DepositId: "",
 					DepositId:    "",
@@ -1212,6 +1255,7 @@ func TestClient_PostIntegratorDeposit(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		// TODO add test cases for different currencies
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1223,179 +1267,6 @@ func TestClient_PostIntegratorDeposit(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("PostIntegratorDeposit() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestClient_StopCard(t *testing.T) {
-
-	type args struct {
-		cardId   string
-		reasonId int
-	}
-	tests := []struct {
-		name           string
-		mockHttpClient MockHttpClient
-		args           args
-		want           Resp
-		wantErr        bool
-	}{
-		{
-			name: "allows an integrator to update their webhook url",
-			mockHttpClient: MockHttpClient{
-
-				DoFunc: func(r *http.Request) (*http.Response, error) {
-					if r.URL.Path != "/card/v1/stop" {
-						t.Errorf("Expected to request '/card/v1/stop', got: %s", r.URL.Path)
-					}
-					if r.Header.Get("Content-Type") != "application/json" {
-						t.Errorf("Expected Accept: application/json header, got: %s", r.Header.Get("Accept"))
-					}
-
-					responseBody := ioutil.NopCloser(bytes.NewReader([]byte(
-						`{"message":"Ok"}`)))
-
-					return &http.Response{
-						StatusCode: 200,
-						Body:       responseBody,
-					}, nil
-				},
-			},
-			args: args{
-				cardId:   "",
-				reasonId: 0,
-			},
-			want: Resp{
-				Message: "Ok",
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cl.SetHTTPClient(&tt.mockHttpClient)
-			got, err := cl.StopCard(tt.args.cardId, tt.args.reasonId)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("StopCard() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("StopCard() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestClient_Unfreeze(t *testing.T) {
-
-	type args struct {
-		cardId string
-	}
-	tests := []struct {
-		name           string
-		mockHttpClient MockHttpClient
-		args           args
-		want           Resp
-		wantErr        bool
-	}{
-		{
-			name: "allows an integrator to update their webhook url",
-			mockHttpClient: MockHttpClient{
-
-				DoFunc: func(r *http.Request) (*http.Response, error) {
-					if r.URL.Path != "/card/v1/unfreeze" {
-						t.Errorf("Expected to request '/card/v1/unfreeze', got: %s", r.URL.Path)
-					}
-					if r.Header.Get("Content-Type") != "application/json" {
-						t.Errorf("Expected Accept: application/json header, got: %s", r.Header.Get("Accept"))
-					}
-
-					responseBody := ioutil.NopCloser(bytes.NewReader([]byte(
-						`{"message":"Ok"}`)))
-
-					return &http.Response{
-						StatusCode: 200,
-						Body:       responseBody,
-					}, nil
-				},
-			},
-			args: args{
-				cardId: "",
-			},
-			want: Resp{
-				Message: "Ok",
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cl.SetHTTPClient(&tt.mockHttpClient)
-			got, err := cl.Unfreeze(tt.args.cardId)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Unfreeze() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Unfreeze() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestClient_UpdateFloatDefault(t *testing.T) {
-
-	type args struct {
-		floatId string
-	}
-	tests := []struct {
-		name           string
-		mockHttpClient MockHttpClient
-		args           args
-		want           Resp
-		wantErr        bool
-	}{
-		{
-			name: "allows an integrator to update their webhook url",
-			mockHttpClient: MockHttpClient{
-
-				DoFunc: func(r *http.Request) (*http.Response, error) {
-					if r.URL.Path != "/integrator/v1/float/default" {
-						t.Errorf("Expected to request '/integrator/v1/float/default', got: %s", r.URL.Path)
-					}
-					if r.Header.Get("Content-Type") != "application/json" {
-						t.Errorf("Expected Accept: application/json header, got: %s", r.Header.Get("Accept"))
-					}
-
-					responseBody := ioutil.NopCloser(bytes.NewReader([]byte(
-						`{"message":"Ok"}`)))
-
-					return &http.Response{
-						StatusCode: 200,
-						Body:       responseBody,
-					}, nil
-				},
-			},
-			args: args{
-				floatId: "",
-			},
-			want: Resp{
-				Message: "Ok",
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cl.SetHTTPClient(&tt.mockHttpClient)
-			got, err := cl.UpdateFloatDefault(tt.args.floatId)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("UpdateFloatDefault() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("UpdateFloatDefault() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
