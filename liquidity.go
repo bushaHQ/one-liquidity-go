@@ -5,6 +5,13 @@ import (
 	"strings"
 )
 
+// url paths to the various endpoints
+const (
+	userEndpoint   = "/card/v1/user"
+	getUserAddress = userEndpoint + "/address"
+	getUserDoc     = userEndpoint + "/documentation/urls"
+)
+
 type RegisterIntegratorData struct {
 	FloatCurrencies    []string `json:"floatCurrencies"`
 	FirstName          string   `json:"firstName"`
@@ -32,6 +39,24 @@ type Params struct {
 	EndDate   string
 	Limit     int
 	Lek       string
+}
+
+type CreateUserData struct {
+	FirstName  string `json:"firstName"`
+	LastName   string `json:"lastName"`
+	KycCountry string `json:"kycCountry"`
+	UID        string `json:"uid"`
+	Address    string `json:"address"`
+	City       string `json:"city"`
+	PostalCode string `json:"postalCode"`
+}
+
+type UpdateUserAddressData struct {
+	UserID     string `json:"userId"`
+	KycCountry string `json:"kycCountry"`
+	Address    string `json:"address"`
+	City       string `json:"city"`
+	PostalCode string `json:"postalCode"`
 }
 
 // RegisterIntegrator allows an integrator register with the system
@@ -160,5 +185,40 @@ func (cl *Client) GetIntegratorFloats(currencies []string) (FloatsResp, error) {
 func (cl *Client) GetIntegratorFloat(currency string) (FloatResp, error) {
 	var res FloatResp
 	err := cl.get(fmt.Sprintf("/integrator/v1/float?currency=%s", currency), nil, &res)
+	return res, err
+}
+
+// UpdateFloatDefault allows an integrator to update their default float
+func (cl *Client) UpdateFloatDefault(floatId string) (Resp, error) {
+	var res Resp
+	err := cl.patch("/integrator/v1/float/default", f{floatId}, &res)
+	return res, err
+}
+
+// GetUser Users allows an integrator to create a user
+func (cl *Client) GetUser(userID string) (getUserResp, error) {
+	var res getUserResp
+	err := cl.get(fmt.Sprintf("%s?userId=%s", userEndpoint, userID), nil, &res)
+	return res, err
+}
+
+// CreateUser Users allows an integrator to create a user
+func (cl *Client) CreateUser(userData CreateUserData) (createUserResp, error) {
+	var res createUserResp
+	err := cl.post(userEndpoint, userData, &res)
+	return res, err
+}
+
+// UpdateUserAdress allows an integrator to update address, postal code and KYC country
+func (cl *Client) UpdateUserAddress(updateData UpdateUserAddressData) (updateUserAddressResp, error) {
+	var res updateUserAddressResp
+	err := cl.patch(getUserAddress, updateData, &res)
+	return res, err
+}
+
+// GetCardUserDocURL allows an integrator to update address, postal code and KYC country
+func (cl *Client) GetCardUserDocURL(userID string) (getCardUserDocURLResp, error) {
+	var res getCardUserDocURLResp
+	err := cl.get(fmt.Sprintf("%s?user=%s", getUserDoc, userID), nil, &res)
 	return res, err
 }

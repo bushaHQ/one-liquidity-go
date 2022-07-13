@@ -2,6 +2,7 @@ package liquidity
 
 import (
 	"bytes"
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -1059,26 +1060,24 @@ func TestClient_GetIntegratorFloats(t *testing.T) {
 	}
 }
 
-func TestClient_GetTransaction(t *testing.T) {
-
+func TestClient_CreateUser(t *testing.T) {
 	type args struct {
-		cardId string
-		p      Params
+		CreateUserData
 	}
 	tests := []struct {
 		name           string
 		mockHttpClient MockHttpClient
 		args           args
-		want           TransactionsResp
+		want           createUserResp
 		wantErr        bool
 	}{
 		{
-			name: "Allows integrators to get a list of all transactions for a given card",
+			name: "Create a card user",
 			mockHttpClient: MockHttpClient{
 
 				DoFunc: func(r *http.Request) (*http.Response, error) {
-					if r.URL.Path != "/card/v1/transactions" {
-						t.Errorf("Expected to request '/card/v1/transactions', got: %s", r.URL.Path)
+					if r.URL.Path != "/card/v1/user" {
+						t.Errorf("Expected to request '/card/v1/user', got: %s", r.URL.Path)
 					}
 					if r.Header.Get("Content-Type") != "application/json" {
 						t.Errorf("Expected Accept: application/json header, got: %s", r.Header.Get("Accept"))
@@ -1087,25 +1086,9 @@ func TestClient_GetTransaction(t *testing.T) {
 					responseBody := ioutil.NopCloser(bytes.NewReader([]byte(
 						`{
 							"message": "Ok",
-							"data": [
-							  {
-								"transactionId": "55ac5531-ca87-4ed4-bce0-e70b44a44b02",
-								"createdAt": "2022-06-02T14:02:37.313Z",
-								"debitId": "aa174033-fe13-4c3a-90b3-f3485a0e9c86",
-								"debitCurrency": "USD",
-								"conversionRate": 1,
-								"type": "debit",
-								"amount": 250
-							  },
-							  {
-								"transactionId": "e891d291-f76b-4e51-affa-8bd9c3e1d1b5",
-								"createdAt": "2022-06-02T11:18:18.788Z",
-								"conversionRate": 1,
-								"creditCurrency": "USD",
-								"type": "credit",
-								"amount": 1000
-							  }
-							]
+							"data": {
+							  "userId": "69a9a77b-5d8d-5738-80eb-ff0b1fb3846a"
+							}
 						  }`)))
 
 					return &http.Response{
@@ -1115,34 +1098,20 @@ func TestClient_GetTransaction(t *testing.T) {
 				},
 			},
 			args: args{
-				cardId: "aa174033-fe13-4c3a-90b3-f3485a0e9c86",
-				p: Params{
-					StartDate: "",
-					EndDate:   "",
-					Limit:     20,
-					Lek:       "",
+				CreateUserData{
+					FirstName:  "kasumu",
+					LastName:   "sofiyullahi",
+					KycCountry: "nga",
+					UID:        "169c9ff3-4af1-4115-a7eb-363827022625",
+					Address:    "3 Misratah Street, Wuse 2",
+					City:       "fct",
+					PostalCode: "900888",
 				},
 			},
-			want: TransactionsResp{
+			want: createUserResp{
 				Message: "Ok",
-				Data: []D4{
-					{
-						TransactionId:  "55ac5531-ca87-4ed4-bce0-e70b44a44b02",
-						CreatedAt:      "2022-06-02T14:02:37.313Z",
-						DebitId:        "aa174033-fe13-4c3a-90b3-f3485a0e9c86",
-						DebitCurrency:  "USD",
-						ConversionRate: 1,
-						Type:           "debit",
-						Amount:         250,
-					},
-					{
-						TransactionId:  "e891d291-f76b-4e51-affa-8bd9c3e1d1b5",
-						CreatedAt:      "2022-06-02T11:18:18.788Z",
-						ConversionRate: 1,
-						CreditCurrency: "USD",
-						Type:           "credit",
-						Amount:         1000,
-					},
+				Data: userResp{
+					UserID: "69a9a77b-5d8d-5738-80eb-ff0b1fb3846a",
 				},
 			},
 			wantErr: false,
@@ -1151,13 +1120,223 @@ func TestClient_GetTransaction(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cl.SetHTTPClient(&tt.mockHttpClient)
-			got, err := cl.GetTransaction(tt.args.cardId, tt.args.p)
+			got, err := cl.CreateUser(tt.args.CreateUserData)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetTransaction() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("CreateUser() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetTransaction() got = %v, want %v", got, tt.want)
+				t.Errorf("CreateUser() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestClient_GetUser(t *testing.T) {
+	respJSON := `
+	{
+		"message": "Ok",
+		"data": {
+		  "createdAt": "2022-05-26T14:47:07.089Z",
+		  "updatedAt": "2022-05-26T14:47:09.744Z",
+		  "firstName": "Chijioke",
+		  "lastName": "Amanambu",
+		  "uid": "b@gmail.com",
+		  "kycCountry": "NGA",
+		  "address": "3 Misratah Street, Wuse 2",
+		  "city": "FCT",
+		  "postalCode": "900888",
+		  "physicalCardCount": 0,
+		  "virtualCardCount": 0,
+		  "selfieUploaded": true,
+		  "idUploaded": true,
+		  "ofacChecked": true,
+		  "ofacFail": false,
+		  "active": true
+		}
+	  }
+	`
+	var resp getUserResp
+	_ = json.Unmarshal([]byte(respJSON), &resp)
+	type args struct {
+		userID string
+	}
+	tests := []struct {
+		name           string
+		mockHttpClient MockHttpClient
+		args           args
+		want           getUserResp
+		wantErr        bool
+	}{
+		{
+			name: "Get a card user",
+			mockHttpClient: MockHttpClient{
+
+				DoFunc: func(r *http.Request) (*http.Response, error) {
+					if r.URL.Path != "/card/v1/user" {
+						t.Errorf("Expected to request '/card/v1/user', got: %s", r.URL.Path)
+					}
+					if r.Header.Get("Content-Type") != "application/json" {
+						t.Errorf("Expected Accept: application/json header, got: %s", r.Header.Get("Accept"))
+					}
+
+					responseBody := ioutil.NopCloser(bytes.NewReader([]byte(respJSON)))
+
+					return &http.Response{
+						StatusCode: 200,
+						Body:       responseBody,
+					}, nil
+				},
+			},
+			args: args{
+				userID: "d01a03bd-4c83-5b08-b458-1b4a2be535bf",
+			},
+			want:    resp,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cl.SetHTTPClient(&tt.mockHttpClient)
+			got, err := cl.GetUser(tt.args.userID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetUser() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetUser() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestClient_UpdateUserAddress(t *testing.T) {
+	respJSON := `
+	{
+		"message": "Ok",
+		"data": {
+		  "message": "Ok"
+		}
+	  }
+	`
+	var resp updateUserAddressResp
+	_ = json.Unmarshal([]byte(respJSON), &resp)
+	type args struct {
+		UpdateUserAddressData
+	}
+	tests := []struct {
+		name           string
+		mockHttpClient MockHttpClient
+		args           args
+		want           updateUserAddressResp
+		wantErr        bool
+	}{
+		{
+			name: "Allows integrators to update the address, city, postalCode and kycCountry of their user",
+			mockHttpClient: MockHttpClient{
+
+				DoFunc: func(r *http.Request) (*http.Response, error) {
+					if r.URL.Path != "/card/v1/user/address" {
+						t.Errorf("Expected to request '/card/v1/user/address', got: %s", r.URL.Path)
+					}
+					if r.Header.Get("Content-Type") != "application/json" {
+						t.Errorf("Expected Accept: application/json header, got: %s", r.Header.Get("Accept"))
+					}
+
+					responseBody := ioutil.NopCloser(bytes.NewReader([]byte(respJSON)))
+					return &http.Response{
+						StatusCode: 200,
+						Body:       responseBody,
+					}, nil
+				},
+			},
+			args: args{
+				UpdateUserAddressData: UpdateUserAddressData{
+					UserID:     "d01a03bd-4c83-5b08-b458-1b4a2be535bf",
+					KycCountry: "NGA",
+					Address:    "No 56 bentell gardens estate, lokogoma",
+					City:       "KJHGVB",
+					PostalCode: "90988VB8",
+				},
+			},
+			want:    resp,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cl.SetHTTPClient(&tt.mockHttpClient)
+			got, err := cl.UpdateUserAddress(tt.args.UpdateUserAddressData)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("UpdateUserAddress() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("UpdateUserAddress() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestClient_GetCardUserDocURL(t *testing.T) {
+	respJSON := `{
+		"message": "Ok",
+		"data": {
+		  "selfieUploadUrl": "https://u54-ci-api-sandbox-kyc-selfie-store.s3.eu-central-1.amazonaws.com/9a2d3488-363b-4fa3-be36-e483a09a8fbf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIA4DZ3BAEQU42QCVPW%2F20220526%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20220526T165215Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEMH%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaDGV1LWNlbnRyYWwtMSJHMEUCIQDMiT0YAZmMF7m9juhqv4AOn%2BRRELhjJwMcEKNlmYNZQAIgHEXnznXPiwQJiCM%2BlG95kmFdS2GLBwPoayE%2FTZluntYqvwIIqv%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARABGgw4MzI4MTA1ODIzMDUiDB%2Bnw2zUoCSbvsT%2FySqTAlkW2qmk9R9uWIykn6BZjiYWotTlwBEdqzW%2FP%2F624gng2L3VnJMxX3qjaSmEV%2FYcUul0FLoQjqa%2B6%2BL%2FhjFXcjnwmBDqd%2F164R25bdWlIU%2Bzq6i6kogkPQ5%2BAo%2Bmt6rJ%2F8BJ7M%2FN%2BfW0I69xcqNHpagvHbwnvHXUUJQ5NuKA2Q5ss6eLL09hNTM6VRkHZTNxrUExtjzsp9O%2F6YAHpg%2BxXAiyn5D85NP8HIyHIEksoGNyqFAp%2BWBEcmA9Oevyjrax90%2FFfwQm8qLjM8nFE744%2F%2BA%2FLCf0E0TBsBO%2FKzqvRccZh%2B67VL31xnmUGusqkAe%2FsVfmvfmmP0Q8jD5fo3TXejY2aSiWxYKjRzzZ0XGS%2FHVsfuN3MLTgvpQGOpoBv7L8tT4kmofM9BwGtv%2BuTKoCrZUXwBn%2F0PSgz8bcXEbKVTCKu0U9ncno5F9C55ge2U6ukHQXvtdxhhkX%2BGxcG1llPvaYyo4C6qCj535LxhwfwxiifcvSu0ilihAmoY46DZhIs6RGWyt%2FdPuakzbA3PgEb%2BwGo8mR3GN77kACpJxQUjef7CrQeyjOVwBkQO5qobzyRbzTQw8dJQ%3D%3D&X-Amz-Signature=9c8b28d1d32189b4406ddeedd39f948e6dcf50478a74fa66998d53bd7ece2e65&X-Amz-SignedHeaders=host",
+		  "idUploadUrl": "https://u54-ci-api-sandbox-kyc-id-store.s3.eu-central-1.amazonaws.com/9a2d3488-363b-4fa3-be36-e483a09a8fbf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIA4DZ3BAEQU42QCVPW%2F20220526%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20220526T165215Z&X-Amz-Expires=3600&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEMH%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaDGV1LWNlbnRyYWwtMSJHMEUCIQDMiT0YAZmMF7m9juhqv4AOn%2BRRELhjJwMcEKNlmYNZQAIgHEXnznXPiwQJiCM%2BlG95kmFdS2GLBwPoayE%2FTZluntYqvwIIqv%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARABGgw4MzI4MTA1ODIzMDUiDB%2Bnw2zUoCSbvsT%2FySqTAlkW2qmk9R9uWIykn6BZjiYWotTlwBEdqzW%2FP%2F624gng2L3VnJMxX3qjaSmEV%2FYcUul0FLoQjqa%2B6%2BL%2FhjFXcjnwmBDqd%2F164R25bdWlIU%2Bzq6i6kogkPQ5%2BAo%2Bmt6rJ%2F8BJ7M%2FN%2BfW0I69xcqNHpagvHbwnvHXUUJQ5NuKA2Q5ss6eLL09hNTM6VRkHZTNxrUExtjzsp9O%2F6YAHpg%2BxXAiyn5D85NP8HIyHIEksoGNyqFAp%2BWBEcmA9Oevyjrax90%2FFfwQm8qLjM8nFE744%2F%2BA%2FLCf0E0TBsBO%2FKzqvRccZh%2B67VL31xnmUGusqkAe%2FsVfmvfmmP0Q8jD5fo3TXejY2aSiWxYKjRzzZ0XGS%2FHVsfuN3MLTgvpQGOpoBv7L8tT4kmofM9BwGtv%2BuTKoCrZUXwBn%2F0PSgz8bcXEbKVTCKu0U9ncno5F9C55ge2U6ukHQXvtdxhhkX%2BGxcG1llPvaYyo4C6qCj535LxhwfwxiifcvSu0ilihAmoY46DZhIs6RGWyt%2FdPuakzbA3PgEb%2BwGo8mR3GN77kACpJxQUjef7CrQeyjOVwBkQO5qobzyRbzTQw8dJQ%3D%3D&X-Amz-Signature=2cf1ed1568c866071f9377950730fc9a984a14847446685a1f290b1a0f28fd54&X-Amz-SignedHeaders=host",
+		  "uid": "b@gmail.com"
+		}
+	  	}
+	  `
+	var resp getCardUserDocURLResp
+	_ = json.Unmarshal([]byte(respJSON), &resp)
+
+	type args struct {
+		userID string
+	}
+	tests := []struct {
+		name           string
+		mockHttpClient MockHttpClient
+		args           args
+		want           getCardUserDocURLResp
+		wantErr        bool
+	}{
+		{
+			name: "Get a card user document upload url",
+			mockHttpClient: MockHttpClient{
+
+				DoFunc: func(r *http.Request) (*http.Response, error) {
+					if r.URL.Path != "/card/v1/user/documentation/urls" {
+						t.Errorf("Expected to request 'card/v1/user/document/url', got: %s", r.URL.Path)
+					}
+					if r.Header.Get("Content-Type") != "application/json" {
+						t.Errorf("Expected Accept: application/json header, got: %s", r.Header.Get("Accept"))
+					}
+
+					responseBody := ioutil.NopCloser(bytes.NewReader([]byte(respJSON)))
+					return &http.Response{
+						StatusCode: 200,
+						Body:       responseBody,
+					}, nil
+				},
+			},
+			args: args{
+				userID: "d01a03bd-4c83-5b08-b458-1b4a2be535bf",
+			},
+			want:    resp,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cl.SetHTTPClient(&tt.mockHttpClient)
+			got, err := cl.GetCardUserDocURL(tt.args.userID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetCardUserDocURL() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetCardUserDocURL() got = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -1271,3 +1450,125 @@ func TestClient_PostIntegratorDeposit(t *testing.T) {
 		})
 	}
 }
+
+func TestClient_GetTransaction(t *testing.T) {
+
+	type args struct {
+		cardId string
+		p      Params
+	}
+	tests := []struct {
+		name           string
+		mockHttpClient MockHttpClient
+		args           args
+		want           TransactionsResp
+		wantErr        bool
+	}{
+		{
+			name: "Allows integrators to get a list of all transactions for a given card",
+			mockHttpClient: MockHttpClient{
+
+				DoFunc: func(r *http.Request) (*http.Response, error) {
+					if r.URL.Path != "/card/v1/transactions" {
+						t.Errorf("Expected to request '/card/v1/transactions', got: %s", r.URL.Path)
+					}
+					if r.Header.Get("Content-Type") != "application/json" {
+						t.Errorf("Expected Accept: application/json header, got: %s", r.Header.Get("Accept"))
+					}
+
+					responseBody := ioutil.NopCloser(bytes.NewReader([]byte(
+						`{
+							"message": "Ok",
+							"data": [
+							  {
+								"transactionId": "55ac5531-ca87-4ed4-bce0-e70b44a44b02",
+								"createdAt": "2022-06-02T14:02:37.313Z",
+								"debitId": "aa174033-fe13-4c3a-90b3-f3485a0e9c86",
+								"debitCurrency": "USD",
+								"conversionRate": 1,
+								"type": "debit",
+								"amount": 250
+							  },
+							  {
+								"transactionId": "e891d291-f76b-4e51-affa-8bd9c3e1d1b5",
+								"createdAt": "2022-06-02T11:18:18.788Z",
+								"conversionRate": 1,
+								"creditCurrency": "USD",
+								"type": "credit",
+								"amount": 1000
+							  }
+							]
+						  }`)))
+
+					return &http.Response{
+						StatusCode: 200,
+						Body:       responseBody,
+					}, nil
+				},
+			},
+			args: args{
+				cardId: "aa174033-fe13-4c3a-90b3-f3485a0e9c86",
+				p: Params{
+					StartDate: "",
+					EndDate:   "",
+					Limit:     20,
+					Lek:       "",
+				},
+			},
+			want: TransactionsResp{
+				Message: "Ok",
+				Data: []D4{
+					{
+						TransactionId:  "55ac5531-ca87-4ed4-bce0-e70b44a44b02",
+						CreatedAt:      "2022-06-02T14:02:37.313Z",
+						DebitId:        "aa174033-fe13-4c3a-90b3-f3485a0e9c86",
+						DebitCurrency:  "USD",
+						ConversionRate: 1,
+						Type:           "debit",
+						Amount:         250,
+					},
+					{
+						TransactionId:  "e891d291-f76b-4e51-affa-8bd9c3e1d1b5",
+						CreatedAt:      "2022-06-02T11:18:18.788Z",
+						ConversionRate: 1,
+						CreditCurrency: "USD",
+						Type:           "credit",
+						Amount:         1000,
+					},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cl.SetHTTPClient(&tt.mockHttpClient)
+			got, err := cl.GetTransaction(tt.args.cardId, tt.args.p)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetTransaction() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetTransaction() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+} // TestClient_GetTransaction
+
+// TestClient_CreateCard
+// TestClient_GetCard
+// TestClient_GetCards
+// TestClient_TopUp
+// TestClient_Debit
+// TestClient_Freeze
+// TestClient_Unfreeze
+// TestClient_StopCard
+// TestClient_GetFailedTransactions
+// TestClient_CreateUser
+// TestClient_GetIntegratorDeposit
+// TestClient_GetIntegratorFloat
+// TestClient_GetIntegratorFloats
+// TestClient_GetTransaction
+// TestClient_UpdateUserAddress
+// TestClient_PostIntegratorDeposit
+// TestClient_GetCardUserDocURL
