@@ -3,7 +3,6 @@ package liquidity
 import (
 	"fmt"
 	"strings"
-	"time"
 )
 
 // url paths to the various endpoints
@@ -28,16 +27,16 @@ type RegisterIntegratorData struct {
 }
 
 type CreateCardData struct {
-	UserId    string    `json:"userId"`
-	Expiry    time.Time `json:"expiry"`
-	SingleUse bool      `json:"singleUse"`
+	UserId    string `json:"userId"`
+	Expiry    string `json:"expiry"`
+	SingleUse bool   `json:"singleUse"`
 }
 
 type Params struct {
 	Id        string
 	Type      string
-	StartDate time.Time
-	EndDate   time.Time
+	StartDate string
+	EndDate   string
 	Limit     int
 	Lek       string
 }
@@ -77,7 +76,7 @@ func (cl *Client) UpdateWebhook(webhook string) (Resp, error) {
 //CreateCard allows an integrator to create a virtual card for their user
 func (cl *Client) CreateCard(data CreateCardData) (CardResp, error) {
 	var res CardResp
-	err := cl.post("/integrator/v1/card", data, &res)
+	err := cl.post("/card/v1", data, &res)
 	return res, err
 }
 
@@ -91,7 +90,7 @@ func (cl *Client) GetCard(card string, trackingNumber string) (CardResp, error) 
 // GetCards allows an integrator to get all cards for their user
 func (cl *Client) GetCards(p Params) (CardsResp, error) {
 	var res CardsResp
-	err := cl.get(fmt.Sprintf("/cards/v1?user=%s&type=%s&startDate=%s&endDate=%s&limit=%d&lek=%s", p.Id, p.Type, p.StartDate.Format(time.RFC3339), p.EndDate.Format(time.RFC3339), p.Limit, p.Lek), nil, &res)
+	err := cl.get(fmt.Sprintf("/cards/v1?user=%s&type=%s&startDate=%s&endDate=%s&limit=%d&lek=%s", p.Id, p.Type, p.StartDate, p.EndDate, p.Limit, p.Lek), nil, &res)
 	return res, err
 }
 
@@ -109,31 +108,17 @@ func (cl *Client) Debit(cardId string, amount float64) (CardResp, error) {
 	return res, err
 }
 
-// GetCardDeposit gets 1Liquidity Union54 float deposit with the deposit ID
-func (cl *Client) GetCardDeposit(depositId string) (DepositResp, error) {
-	var res DepositResp
-	err := cl.get(fmt.Sprintf("/card/v1/service/deposit?depositId=%s", depositId), nil, &res)
-	return res, err
-}
-
-//PostCardDeposit initiates a Union54 float deposit
-func (cl *Client) PostCardDeposit(amount int, currency string) (PostDepositResp, error) {
-	var res PostDepositResp
-	err := cl.post("/card/v1/service/deposit", d{amount, currency}, &res)
-	return res, err
-}
-
 // Freeze allows an integrator or admin to freeze any type of card
 func (cl *Client) Freeze(cardId string) (Resp, error) {
 	var res Resp
-	err := cl.patch("/card/v1/freeze", f{cardId}, &res)
+	err := cl.patch("/card/v1/freeze", s{CardId: cardId}, &res)
 	return res, err
 }
 
 // Unfreeze allows an integrator or admin to unfreeze any type of card
 func (cl *Client) Unfreeze(cardId string) (Resp, error) {
 	var res Resp
-	err := cl.patch("/card/v1/unfreeze", f{cardId}, &res)
+	err := cl.patch("/card/v1/unfreeze", s{CardId: cardId}, &res)
 	return res, err
 }
 
@@ -154,14 +139,14 @@ func (cl *Client) GetFailedTransaction(txnId string) (TransactionResp, error) {
 // GetFailedTransactions returns the details of all failed transactions
 func (cl *Client) GetFailedTransactions(p Params) (TransactionsResp, error) {
 	var res TransactionsResp
-	err := cl.get(fmt.Sprintf("/card/v1/transactions/failed?card=%s&startDate=%s&endDate=%s&limit=%d&lek=%s", p.Id, p.StartDate.Format(time.RFC3339), p.EndDate.Format(time.RFC3339), p.Limit, p.Lek), nil, &res)
+	err := cl.get(fmt.Sprintf("/card/v1/transactions/failed?card=%s&startDate=%s&endDate=%s&limit=%d&lek=%s", p.Id, p.StartDate, p.EndDate, p.Limit, p.Lek), nil, &res)
 	return res, err
 }
 
 // GetTransaction allows integrators to get a list of all transactions for a given card
 func (cl *Client) GetTransaction(cardId string, p Params) (TransactionsResp, error) {
 	var res TransactionsResp
-	err := cl.get(fmt.Sprintf("/card/v1/transactions?card=%s&startDate=%s&endDate=%s&limit=%d&lek=%s", cardId, p.StartDate.Format(time.RFC3339), p.EndDate.Format(time.RFC3339), p.Limit, p.Lek), nil, &res)
+	err := cl.get(fmt.Sprintf("/card/v1/transactions?card=%s&startDate=%s&endDate=%s&limit=%d&lek=%s", cardId, p.StartDate, p.EndDate, p.Limit, p.Lek), nil, &res)
 	return res, err
 }
 

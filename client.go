@@ -183,6 +183,11 @@ func (cl *Client) request(req *http.Request, response interface{}) (err error) {
 
 	defer r.Body.Close()
 
+	// body, _ := ioutil.ReadAll(r.Body)
+
+	// fmt.Println(r)
+	// fmt.Println(string(body))
+
 	if r.StatusCode < 200 || r.StatusCode >= 300 {
 		e := Error{}
 		err = json.NewDecoder(r.Body).Decode(&e)
